@@ -3,6 +3,7 @@ python << endpython
 import vim
 import os
 import tempfile
+import re
 
 vim.command("up")
 makeprg = vim.eval("&makeprg")
@@ -46,17 +47,25 @@ if "$*" in makeprg:
 	makeprg = makeprg.replace("$*", args)
 	args = ""
 
+# expand all %:* filename specifiers individually, because
+# vim's expand only does something useful when the string
+# starts with "%"
+file_exprs = re.findall(r'(?<!\\)(%(?::.)*)', makeprg)
+for file_expr in sorted(file_exprs, key=lambda s:-len(s)):
+	expanded = vim.eval("expand('%s')" % (file_expr,))
+	makeprg = makeprg.replace(file_expr, expanded)
+
 # I shudder to think what escaping is appropriate here...
 cmd = """(
 #set -x;
 #sleep 5;
-		if {makeprg} {args} > {filename} 2>&1; then
+		if ({makeprg}) {args} > {filename} 2>&1; then
 			msg='Success!';
 			{on_success}
-			{notify_cmd} &;
+			({notify_cmd}) &
 		else
 			msg='Failed.';
-			{notify_cmd} &;
+			({notify_cmd}) &
 			{on_fail}
 		fi;
 		sleep 5;
@@ -73,6 +82,10 @@ cmd = """(
 	)
 vim.command("echo \"running make in the background...\"")
 os.system(cmd)
+#print cmd
+#with open("/tmp/cmd", "w") as f:
+#	f.write(cmd)
+
 endpython
 endfun
 
