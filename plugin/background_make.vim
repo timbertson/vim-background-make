@@ -1,5 +1,5 @@
 fun! <SID>BackgroundMake(args)
-python << endpython
+python3 << endpython
 import vim
 import os
 import tempfile
