@@ -8,6 +8,7 @@ import re
 vim.command("up")
 makeprg = vim.eval("&makeprg")
 servername = vim.eval("v:servername")
+assert servername, "Please run vim with --servername <a_name>"
 args = vim.eval("a:args")
 makeprg = vim.eval("expand(&makeprg)")
 
